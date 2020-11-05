@@ -21,6 +21,7 @@ import DocPage, { getData as getDataDoc } from 'page-components/document';
 import FolderPage, { getData as getDataFolder } from 'page-components/folder';
 import ProdPage, { getData as getDataProd } from 'page-components/product';
 import SearchPage, { getData as getDataSearch } from 'page-components/search';
+import EmployeePage from 'page-components/employee';
 
 const renderers = {
   document: {
@@ -38,6 +39,10 @@ const renderers = {
   search: {
     component: SearchPage,
     getData: getDataSearch
+  },
+  employee: {
+    component: EmployeePage,
+    getData: getDataDoc
   }
 };
 
@@ -62,6 +67,9 @@ export async function getStaticProps(context) {
         query ITEM_TYPE($language: String!, $path: String!) {
           catalogue(language: $language, path: $path) {
             type
+            shape {
+              name
+            }
             language
             children {
               type
@@ -74,10 +82,13 @@ export async function getStaticProps(context) {
         path: asPath
       }
     });
-    const { type, children } = getItemType.data.catalogue;
+
+    const { type, shape, children } = getItemType.data.catalogue;
 
     let renderer = 'folder';
-    if (type === 'folder' && childrenIsMostlyProducts(children || [])) {
+    if (shape.name === 'Ansatt') {
+      renderer = 'employee';
+    } else if (type === 'folder' && childrenIsMostlyProducts(children || [])) {
       renderer = 'search';
     } else if (type in renderers) {
       renderer = type;
@@ -190,6 +201,7 @@ export async function getStaticPaths({ locales, defaultLocale }) {
 }
 
 export default function GenericCatalogueItem({ renderer, asPath, ...rest }) {
+  console.log({ renderer });
   const router = useRouter();
   const Component = (renderers[renderer] || renderers.folder).component;
 
